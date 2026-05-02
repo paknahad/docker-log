@@ -38,7 +38,7 @@ run_agent_cycle() {
         echo "[codex] ChatGPT auth detected; using account-default model"
         CODEX_HOME="$codex_home" \
             codex exec \
-            --sandbox workspace-write \
+            --dangerously-bypass-approvals-and-sandbox \
             "$AGENT_PROMPT" \
             </dev/null
         rc=$?
@@ -48,7 +48,7 @@ run_agent_cycle() {
 
     codex exec \
         --model "$model" \
-        --sandbox workspace-write \
+        --dangerously-bypass-approvals-and-sandbox \
         "$AGENT_PROMPT" \
         </dev/null
 }
