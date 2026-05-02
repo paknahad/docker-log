@@ -7,21 +7,45 @@
 
 set -euo pipefail
 
+is_chatgpt_auth() {
+    [ -z "${OPENAI_API_KEY:-}" ] \
+        && [ -f "$HOME/.codex/auth.json" ] \
+        && jq -er '.auth_mode == "chatgpt"' "$HOME/.codex/auth.json" >/dev/null 2>&1
+}
+
 codex_model() {
     case "${AGENT_MODEL:-default}" in
-        default|codex) echo "gpt-5-codex" ;;
-        gpt-5)         echo "gpt-5" ;;
-        *)             echo "$AGENT_MODEL" ;;
+        default|codex)           echo "gpt-5-codex" ;;
+        gpt-5)                   echo "gpt-5" ;;
+        GPT-5.4|gpt-5.4|gpt5.4) echo "gpt-5-codex" ;;
+        *)                       echo "$AGENT_MODEL" ;;
     esac
 }
 
 run_agent_cycle() {
     local model
+    local codex_home
+    local rc
     model="$(codex_model)"
-    echo "[codex] cycle starting with model: $model"
+    echo "[codex] cycle starting with requested model: $model"
 
     # In the unattended launcher, stdin stays attached to the container process.
     # Redirect from /dev/null so Codex doesn't wait for extra input before starting.
+    if is_chatgpt_auth; then
+        codex_home="$(mktemp -d)"
+        mkdir -p "$codex_home"
+        cp "$HOME/.codex/auth.json" "$codex_home/auth.json"
+        echo "[codex] ChatGPT auth detected; using account-default model"
+        CODEX_HOME="$codex_home" \
+            codex exec \
+            --sandbox workspace-write \
+            "$AGENT_PROMPT" \
+            </dev/null
+        rc=$?
+        rm -rf "$codex_home"
+        return "$rc"
+    fi
+
     codex exec \
         --model "$model" \
         --sandbox workspace-write \
