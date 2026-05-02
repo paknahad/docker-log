@@ -1,3 +1,12 @@
+## 2026-05-02 — Multiplexed stream manager added
+
+**What it does:** docker-log now has the internal machinery to read multiple selected container log streams at the same time and combine them into one feed.
+**How:** Adds a stream manager that runs one reader per container source, prefixes each log line with the container name, and reports stream-specific errors without stopping other streams.
+**Why:** This creates the live streaming foundation needed before the terminal UI can show logs from several containers together.
+**Status:** PR open.
+**PR:** #12
+STATUS: Multiplexed live log streaming → foundation shipped
+
 ## 2026-05-02 — Docker container discovery added
 
 **What it does:** docker-log now finds running local Docker containers and shows their name, image, and status in the selection screen.
