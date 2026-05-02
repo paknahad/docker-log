@@ -35,13 +35,13 @@ shell:  ## Drop into dev container
 
 # --- Customise these per project ---
 test:  ## Run tests
-	$(COMPOSE) run --rm dev sh -c "echo 'Configure test command in Makefile'"
+	$(COMPOSE) run --rm dev go test ./...
 
 lint:  ## Run linters
-	$(COMPOSE) run --rm dev sh -c "echo 'Configure lint command in Makefile'"
+	$(COMPOSE) run --rm dev sh -c "go vet ./... && staticcheck ./..."
 
 format:  ## Auto-format
-	$(COMPOSE) run --rm dev sh -c "echo 'Configure format command in Makefile'"
+	$(COMPOSE) run --rm dev gofmt -w .
 
 ci: lint test  ## Run full CI suite
 
