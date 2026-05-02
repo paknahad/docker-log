@@ -31,8 +31,8 @@ func TestManagerFansInLinesWithContainerPrefixes(t *testing.T) {
 	got := collectEvents(events)
 
 	want := map[string]bool{
-		"api|api one|api: api one": false,
-		"api|api two|api: api two": false,
+		"api|api one|api: api one":             false,
+		"api|api two|api: api two":             false,
 		"worker|worker one|worker: worker one": false,
 	}
 	for _, event := range got {
@@ -87,6 +87,31 @@ func TestManagerReportsSourceFailureWithoutStoppingOtherStreams(t *testing.T) {
 	}
 	if !sawGoodLine {
 		t.Fatalf("unrelated stream did not continue in %#v", got)
+	}
+}
+
+func TestManagerStreamsLinesLongerThanScannerDefaultLimit(t *testing.T) {
+	longLine := strings.Repeat("x", 70*1024)
+	source := Source{
+		Container: "api",
+		Open: func(context.Context) (io.ReadCloser, error) {
+			return io.NopCloser(strings.NewReader(longLine + "\n")), nil
+		},
+	}
+
+	events := collectEvents(NewManager(0).Start(context.Background(), []Source{source}))
+
+	if len(events) != 1 {
+		t.Fatalf("len(events) = %d, want 1: %#v", len(events), events)
+	}
+	if events[0].Err != nil {
+		t.Fatalf("event.Err = %v, want nil", events[0].Err)
+	}
+	if events[0].Message != longLine {
+		t.Fatalf("len(event.Message) = %d, want %d", len(events[0].Message), len(longLine))
+	}
+	if events[0].Line != "api: "+longLine {
+		t.Fatalf("event.Line has prefix/message mismatch")
 	}
 }
 
