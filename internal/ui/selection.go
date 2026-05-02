@@ -13,8 +13,16 @@ type SelectionModel struct {
 	containers []domain.Container
 	cursor     int
 	selected   map[string]struct{}
-	done       bool
+	result     selectionResult
 }
+
+type selectionResult int
+
+const (
+	selectionPending selectionResult = iota
+	selectionStarted
+	selectionCancelled
+)
 
 func NewSelectionModel(containers []domain.Container) SelectionModel {
 	return SelectionModel{
@@ -34,8 +42,11 @@ func (m SelectionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	switch key.String() {
-	case "ctrl+c", "q", "enter":
-		m.done = true
+	case "enter":
+		m.result = selectionStarted
+		return m, tea.Quit
+	case "ctrl+c", "q":
+		m.result = selectionCancelled
 		return m, tea.Quit
 	case "up", "k":
 		if len(m.containers) == 0 {
@@ -103,7 +114,15 @@ func (m SelectionModel) Cursor() int {
 }
 
 func (m SelectionModel) Done() bool {
-	return m.done
+	return m.result != selectionPending
+}
+
+func (m SelectionModel) Started() bool {
+	return m.result == selectionStarted
+}
+
+func (m SelectionModel) Cancelled() bool {
+	return m.result == selectionCancelled
 }
 
 func (m SelectionModel) SelectedContainers() []domain.Container {
