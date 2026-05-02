@@ -1,3 +1,12 @@
+## 2026-05-02 — Long log lines keep streaming
+
+**What it does:** docker-log can keep reading a container when it emits a single unusually large log line.
+**How:** The stream reader now allows log lines up to a documented 1 MiB bound instead of stopping at the default scanner limit.
+**Why:** Large JSON payloads and stack traces should not make a healthy container disappear from the live log view.
+**Status:** Merged.
+**PR:** #25
+STATUS: Live log streaming resilience -> ✅ shipped
+
 ## 2026-05-02 — Selected containers wired into live log view
 
 **What it does:** docker-log can now move from selecting containers into the live log viewer for the chosen containers.
