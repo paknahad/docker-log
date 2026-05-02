@@ -1,11 +1,11 @@
-## 2026-05-02 — Interactive log filtering in progress
+## 2026-05-02 — Interactive log filtering added
 
 **What it does:** Adds the log-view pieces needed for users to type a filter and narrow visible log output while keeping buffered lines available.
 **How:** Adds a case-sensitive filter module and a Bubble Tea log model that buffers stream events and filters only what is rendered.
 **Why:** This makes filtering a display concern, so live streams can keep running while users refine or clear the filter.
-**Status:** In progress.
-**PR:** Pending.
-STATUS: Interactive log filtering → in progress
+**Status:** Merged.
+**PR:** #15
+STATUS: Interactive log filtering → foundation shipped
 
 ## 2026-05-02 — Multiplexed stream manager added
 
