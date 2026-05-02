@@ -18,6 +18,7 @@ services:
     image: ${COMPOSE_PROJECT_NAME:-agent}-dev:latest
     volumes:
       - ..:/workspace:cached
+      - /var/run/docker.sock:/var/run/docker.sock
       # GitHub auth (all runtimes need this)
       - ${HOME}/.config/gh:/home/agent/.config/gh
       - ${HOME}/.gitconfig:/home/agent/.gitconfig:ro
