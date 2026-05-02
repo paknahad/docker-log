@@ -20,11 +20,13 @@ run_agent_cycle() {
     model="$(codex_model)"
     echo "[codex] cycle starting with model: $model"
 
-    # Codex CLI's non-interactive flag is `exec`, with --sandbox workspace-write for unattended.
+    # In the unattended launcher, stdin stays attached to the container process.
+    # Redirect from /dev/null so Codex doesn't wait for extra input before starting.
     codex exec \
         --model "$model" \
         --sandbox workspace-write \
-        "$AGENT_PROMPT"
+        "$AGENT_PROMPT" \
+        </dev/null
 }
 
 check_agent_installed() {
