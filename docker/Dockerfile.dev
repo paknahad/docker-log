@@ -59,4 +59,14 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} \
 WORKDIR /workspace
 USER ${USERNAME}
 
+# --- Go toolchain ----------------------------------------------------------
+USER root
+RUN curl -fsSL https://go.dev/dl/go1.22.0.linux-amd64.tar.gz \
+    | tar -C /usr/local -xz \
+    && ln -s /usr/local/go/bin/go /usr/local/bin/go \
+    && ln -s /usr/local/go/bin/gofmt /usr/local/bin/gofmt
+USER agent
+RUN go install honnef.co/go/tools/cmd/staticcheck@2024.1.1
+ENV PATH="/home/agent/go/bin:${PATH}"
+
 CMD ["/bin/bash"]
