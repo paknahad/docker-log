@@ -1,3 +1,12 @@
+## 2026-05-02 — Selection start and cancel are distinct
+
+**What it does:** docker-log can now tell whether the selection screen exited because the user started streaming or cancelled.
+**How:** The selection UI records a focused result state and exposes helpers for started versus cancelled outcomes.
+**Why:** Later orchestration can handle Enter differently from `q` or Ctrl-C without guessing from selected containers.
+**Status:** Merged.
+**PR:** #26
+STATUS: Selection cancel handling -> ✅ shipped
+
 ## 2026-05-02 — Long log lines keep streaming
 
 **What it does:** docker-log can keep reading a container when it emits a single unusually large log line.
