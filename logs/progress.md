@@ -1,3 +1,7 @@
+## In progress
+
+**Issue #4 — Multiplexed live log streaming:** Building the focused stream lifecycle and fan-in layer in `internal/stream` on branch `agent/4-multiplexed-live-log-streaming`.
+
 ## 2026-05-02 — Docker container discovery added
 
 **What it does:** docker-log now finds running local Docker containers and shows their name, image, and status in the selection screen.
