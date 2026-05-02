@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"io"
@@ -9,6 +10,7 @@ import (
 
 	dockertypes "github.com/docker/docker/api/types"
 	dockercontainer "github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/paknahad/docker-log/internal/domain"
 )
 
@@ -77,18 +79,28 @@ func TestClientListRunningContainersWrapsErrors(t *testing.T) {
 
 func TestClientOpenContainerLogs(t *testing.T) {
 	reader := io.NopCloser(strings.NewReader("ready\n"))
-	api := &fakeContainerAPI{logReader: reader}
+	api := &fakeContainerAPI{
+		inspect:   dockertypes.ContainerJSON{Config: &dockercontainer.Config{Tty: true}},
+		logReader: reader,
+	}
 	client := NewClientWithAPI(api)
 
 	got, err := client.OpenContainerLogs(context.Background(), domain.Container{ID: "abc123", Name: "api"})
 	if err != nil {
 		t.Fatalf("OpenContainerLogs() error = %v", err)
 	}
-	if got != reader {
-		t.Fatalf("OpenContainerLogs() reader = %p, want %p", got, reader)
+	body, err := io.ReadAll(got)
+	if err != nil {
+		t.Fatalf("read logs: %v", err)
+	}
+	if string(body) != "ready\n" {
+		t.Fatalf("logs = %q, want ready newline", body)
 	}
 	if api.logContainerID != "abc123" {
 		t.Fatalf("ContainerLogs() container = %q, want abc123", api.logContainerID)
+	}
+	if api.inspectContainerID != "abc123" {
+		t.Fatalf("ContainerInspect() container = %q, want abc123", api.inspectContainerID)
 	}
 	if !api.logOptions.Follow {
 		t.Fatal("ContainerLogs() Follow = false, want true")
@@ -101,6 +113,37 @@ func TestClientOpenContainerLogs(t *testing.T) {
 	}
 	if api.logOptions.Tail != "0" {
 		t.Fatalf("ContainerLogs() Tail = %q, want 0 for live-only streams", api.logOptions.Tail)
+	}
+}
+
+func TestClientOpenContainerLogsDemultiplexesDockerFrames(t *testing.T) {
+	var framed bytes.Buffer
+	stdout := stdcopy.NewStdWriter(&framed, stdcopy.Stdout)
+	stderr := stdcopy.NewStdWriter(&framed, stdcopy.Stderr)
+	if _, err := stdout.Write([]byte("out one\n")); err != nil {
+		t.Fatalf("write stdout frame: %v", err)
+	}
+	if _, err := stderr.Write([]byte("err one\n")); err != nil {
+		t.Fatalf("write stderr frame: %v", err)
+	}
+
+	api := &fakeContainerAPI{
+		inspect:   dockertypes.ContainerJSON{Config: &dockercontainer.Config{Tty: false}},
+		logReader: io.NopCloser(bytes.NewReader(framed.Bytes())),
+	}
+	client := NewClientWithAPI(api)
+
+	got, err := client.OpenContainerLogs(context.Background(), domain.Container{ID: "abc123", Name: "api"})
+	if err != nil {
+		t.Fatalf("OpenContainerLogs() error = %v", err)
+	}
+	body, err := io.ReadAll(got)
+	if err != nil {
+		t.Fatalf("read logs: %v", err)
+	}
+
+	if string(body) != "out one\nerr one\n" {
+		t.Fatalf("logs = %q, want demultiplexed stdout/stderr payloads", body)
 	}
 }
 
@@ -120,14 +163,36 @@ func TestClientOpenContainerLogsWrapsErrors(t *testing.T) {
 	}
 }
 
+func TestClientOpenContainerLogsWrapsInspectErrors(t *testing.T) {
+	api := &fakeContainerAPI{inspectErr: errors.New("not found")}
+	client := NewClientWithAPI(api)
+
+	_, err := client.OpenContainerLogs(context.Background(), domain.Container{ID: "abc123", Name: "api"})
+	if err == nil {
+		t.Fatal("OpenContainerLogs() error = nil, want error")
+	}
+	if !strings.Contains(err.Error(), "inspect Docker container api") {
+		t.Fatalf("error = %q, want inspect context", err)
+	}
+	if !errors.Is(err, api.inspectErr) {
+		t.Fatalf("error does not wrap original error %v", api.inspectErr)
+	}
+	if api.logContainerID != "" {
+		t.Fatalf("ContainerLogs() container = %q, want no log call after inspect failure", api.logContainerID)
+	}
+}
+
 type fakeContainerAPI struct {
-	containers     []dockertypes.Container
-	err            error
-	options        dockercontainer.ListOptions
-	logContainerID string
-	logOptions     dockercontainer.LogsOptions
-	logReader      io.ReadCloser
-	logErr         error
+	containers         []dockertypes.Container
+	err                error
+	options            dockercontainer.ListOptions
+	inspectContainerID string
+	inspect            dockertypes.ContainerJSON
+	inspectErr         error
+	logContainerID     string
+	logOptions         dockercontainer.LogsOptions
+	logReader          io.ReadCloser
+	logErr             error
 }
 
 func (f *fakeContainerAPI) ContainerList(ctx context.Context, options dockercontainer.ListOptions) ([]dockertypes.Container, error) {
@@ -136,6 +201,14 @@ func (f *fakeContainerAPI) ContainerList(ctx context.Context, options dockercont
 		return nil, f.err
 	}
 	return f.containers, nil
+}
+
+func (f *fakeContainerAPI) ContainerInspect(ctx context.Context, containerID string) (dockertypes.ContainerJSON, error) {
+	f.inspectContainerID = containerID
+	if f.inspectErr != nil {
+		return dockertypes.ContainerJSON{}, f.inspectErr
+	}
+	return f.inspect, nil
 }
 
 func (f *fakeContainerAPI) ContainerLogs(ctx context.Context, containerID string, options dockercontainer.LogsOptions) (io.ReadCloser, error) {

@@ -1,3 +1,12 @@
+## 2026-05-02 — Docker log frame artifacts removed
+
+**What it does:** docker-log now shows clean stdout and stderr text for common non-TTY containers instead of leaking Docker framing bytes into the log view.
+**How:** The Docker adapter inspects TTY mode and demultiplexes Docker stdout/stderr frames before the stream layer reads them.
+**Why:** Live logs should look like readable container output no matter how Docker transports stdout and stderr internally.
+**Status:** Merged.
+**PR:** #27
+STATUS: Live log streaming resilience -> ✅ shipped
+
 ## 2026-05-02 — Selection start and cancel are distinct
 
 **What it does:** docker-log can now tell whether the selection screen exited because the user started streaming or cancelled.

@@ -5,14 +5,17 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 
 	dockertypes "github.com/docker/docker/api/types"
 	dockercontainer "github.com/docker/docker/api/types/container"
 	dockerclient "github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/paknahad/docker-log/internal/domain"
 )
 
 type containerAPI interface {
+	ContainerInspect(context.Context, string) (dockertypes.ContainerJSON, error)
 	ContainerList(context.Context, dockercontainer.ListOptions) ([]dockertypes.Container, error)
 	ContainerLogs(context.Context, string, dockercontainer.LogsOptions) (io.ReadCloser, error)
 }
@@ -55,6 +58,11 @@ func (c *Client) ListRunningContainers(ctx context.Context) ([]domain.Container,
 }
 
 func (c *Client) OpenContainerLogs(ctx context.Context, container domain.Container) (io.ReadCloser, error) {
+	inspected, err := c.api.ContainerInspect(ctx, container.ID)
+	if err != nil {
+		return nil, fmt.Errorf("inspect Docker container %s for log stream: %w", container.DisplayName(), err)
+	}
+
 	reader, err := c.api.ContainerLogs(ctx, container.ID, dockercontainer.LogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
@@ -64,7 +72,52 @@ func (c *Client) OpenContainerLogs(ctx context.Context, container domain.Contain
 	if err != nil {
 		return nil, fmt.Errorf("open Docker logs for %s: %w", container.DisplayName(), err)
 	}
-	return reader, nil
+	if inspected.Config != nil && inspected.Config.Tty {
+		return reader, nil
+	}
+	return demultiplexLogStream(reader), nil
+}
+
+func demultiplexLogStream(source io.ReadCloser) io.ReadCloser {
+	reader, writer := io.Pipe()
+	stream := &demultiplexedLogStream{
+		reader: reader,
+		source: source,
+	}
+
+	go func() {
+		_, err := stdcopy.StdCopy(writer, writer, source)
+		_ = writer.CloseWithError(err)
+		_ = stream.closeSource()
+	}()
+
+	return stream
+}
+
+type demultiplexedLogStream struct {
+	reader *io.PipeReader
+	source io.Closer
+	once   sync.Once
+	err    error
+}
+
+func (s *demultiplexedLogStream) Read(p []byte) (int, error) {
+	return s.reader.Read(p)
+}
+
+func (s *demultiplexedLogStream) Close() error {
+	err := s.closeSource()
+	if pipeErr := s.reader.Close(); err == nil {
+		err = pipeErr
+	}
+	return err
+}
+
+func (s *demultiplexedLogStream) closeSource() error {
+	s.once.Do(func() {
+		s.err = s.source.Close()
+	})
+	return s.err
 }
 
 func primaryName(names []string) string {
