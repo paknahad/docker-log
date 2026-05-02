@@ -1,3 +1,12 @@
+## 2026-05-02 — Docker log stream opener added
+
+**What it does:** docker-log can now ask Docker for a live log stream from a selected container through the project’s adapter layer.
+**How:** Adds a Docker client method that opens followed stdout/stderr logs without loading historical output, plus adapter-boundary tests.
+**Why:** This keeps real log access out of UI/runtime code and clears the next step for wiring selected containers into the log viewer.
+**Status:** PR open.
+**PR:** #19
+STATUS: Docker log stream opener -> foundation shipped
+
 ## 2026-05-02 — Interactive log filtering added
 
 **What it does:** Adds the log-view pieces needed for users to type a filter and narrow visible log output while keeping buffered lines available.

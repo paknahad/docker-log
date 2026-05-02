@@ -3,6 +3,7 @@ package docker
 import (
 	"context"
 	"fmt"
+	"io"
 	"strings"
 
 	dockertypes "github.com/docker/docker/api/types"
@@ -13,6 +14,7 @@ import (
 
 type containerAPI interface {
 	ContainerList(context.Context, dockercontainer.ListOptions) ([]dockertypes.Container, error)
+	ContainerLogs(context.Context, string, dockercontainer.LogsOptions) (io.ReadCloser, error)
 }
 
 type Client struct {
@@ -50,6 +52,19 @@ func (c *Client) ListRunningContainers(ctx context.Context) ([]domain.Container,
 		})
 	}
 	return discovered, nil
+}
+
+func (c *Client) OpenContainerLogs(ctx context.Context, container domain.Container) (io.ReadCloser, error) {
+	reader, err := c.api.ContainerLogs(ctx, container.ID, dockercontainer.LogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Follow:     true,
+		Tail:       "0",
+	})
+	if err != nil {
+		return nil, fmt.Errorf("open Docker logs for %s: %w", container.DisplayName(), err)
+	}
+	return reader, nil
 }
 
 func primaryName(names []string) string {
