@@ -1,3 +1,12 @@
+## 2026-05-02 — Selected containers wired into live log view
+
+**What it does:** docker-log can now move from selecting containers into the live log viewer for the chosen containers.
+**How:** The CLI reads the selection result, creates Docker-backed stream sources, starts the stream manager, and launches the log view.
+**Why:** This completes the core product workflow from choosing containers to watching live logs.
+**Status:** PR open.
+**PR:** #20
+STATUS: End-to-end live log viewing → PR open
+
 ## 2026-05-02 — Docker log stream opener added
 
 **What it does:** docker-log can now ask Docker for a live log stream from a selected container through the project’s adapter layer.
