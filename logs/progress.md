@@ -1,3 +1,7 @@
+## In progress
+
+- Issue #2: Implement Docker container discovery on branch `agent/2-docker-container-discovery`.
+
 ## 2026-05-02 — Go project bootstrap opened for review
 
 **What it does:** Prepares docker-log to build as a Go command-line app.

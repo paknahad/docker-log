@@ -88,6 +88,9 @@ func (m SelectionModel) View() string {
 		if container.Image != "" {
 			fmt.Fprintf(&b, "  %s", container.Image)
 		}
+		if container.Status != "" {
+			fmt.Fprintf(&b, "  %s", container.Status)
+		}
 		b.WriteByte('\n')
 	}
 

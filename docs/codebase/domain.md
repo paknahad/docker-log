@@ -6,7 +6,7 @@ Defines shared domain types used across Docker discovery, stream management, fil
 
 ## Public API
 
-- `Container`: a normalized running Docker container with ID, name, and image fields.
+- `Container`: a normalized running Docker container with ID, name, image, and status fields.
 - `Container.DisplayName()`: returns the preferred label for UI and log prefixes.
 
 ## Data tables

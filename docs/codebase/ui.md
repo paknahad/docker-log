@@ -2,7 +2,7 @@
 
 ## What it does
 
-Provides Bubble Tea models for terminal interaction. The current model lets users navigate a list of running containers and select one or more containers before log streaming starts.
+Provides Bubble Tea models for terminal interaction. The current model lets users navigate a list of running containers, see their image and status, and select one or more containers before log streaming starts.
 
 ## Public API
 
