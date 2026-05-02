@@ -153,7 +153,7 @@ RAW_LOG_IN_CONTAINER="/workspace/$RAW_LOG"
 # Make the display pipeline non-fatal: if jq dies, fall through to cat so the
 # pipeline never breaks. `|| true` on the outer pipe is a final belt-and-suspenders.
 set +e
-$COMPOSE exec -T agent bash -lc "
+$COMPOSE exec -T -u agent -e HOME=/home/agent agent bash -lc "
     set -uo pipefail
     cd /workspace
     source agent.config
