@@ -11,7 +11,9 @@ Provides Bubble Tea models for terminal interaction. The selection model lets us
 - `SelectionModel.View()`: renders the selectable container list or an empty state.
 - `SelectionModel.SelectedContainers()`: returns selected containers in display order.
 - `SelectionModel.Cursor()`: returns the active row index for tests and higher-level orchestration.
-- `SelectionModel.Done()`: reports whether the model exited through enter or quit.
+- `SelectionModel.Done()`: reports whether the model exited through Enter or a cancel key.
+- `SelectionModel.Started()`: reports whether the model exited because the user pressed Enter to start streaming.
+- `SelectionModel.Cancelled()`: reports whether the model exited because the user pressed `q` or Ctrl-C.
 - `NewLogModel(events <-chan stream.Event)`: creates a log viewer for an existing stream event channel.
 - `LogModel.Update(msg tea.Msg)`: consumes stream events, handles filter typing, and exits on quit keys.
 - `LogModel.View()`: renders filtered buffered log lines followed by the filter prompt.

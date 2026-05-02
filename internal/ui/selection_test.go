@@ -64,17 +64,36 @@ func TestSelectionModelRendersContainerStatus(t *testing.T) {
 	}
 }
 
-func TestSelectionModelQuitKeysExitCleanly(t *testing.T) {
-	for _, key := range []string{"q", "ctrl+c", "enter"} {
+func TestSelectionModelEnterStartsSelection(t *testing.T) {
+	model := NewSelectionModel([]domain.Container{{ID: "api-id", Name: "api"}})
+
+	next, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	selection, ok := next.(SelectionModel)
+	if !ok {
+		t.Fatalf("Update() returned %T, want SelectionModel", next)
+	}
+	if !selection.Done() {
+		t.Fatal("Done() = false, want true")
+	}
+	if !selection.Started() {
+		t.Fatal("Started() = false, want true")
+	}
+	if selection.Cancelled() {
+		t.Fatal("Cancelled() = true, want false")
+	}
+	if cmd == nil {
+		t.Fatal("Update(enter) returned nil command, want quit command")
+	}
+}
+
+func TestSelectionModelQuitKeysCancelSelection(t *testing.T) {
+	for _, key := range []string{"q", "ctrl+c"} {
 		t.Run(key, func(t *testing.T) {
 			model := NewSelectionModel([]domain.Container{{ID: "api-id", Name: "api"}})
 
 			next, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(key)})
 			if key == "ctrl+c" {
 				next, cmd = model.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
-			}
-			if key == "enter" {
-				next, cmd = model.Update(tea.KeyMsg{Type: tea.KeyEnter})
 			}
 
 			selection, ok := next.(SelectionModel)
@@ -83,6 +102,12 @@ func TestSelectionModelQuitKeysExitCleanly(t *testing.T) {
 			}
 			if !selection.Done() {
 				t.Fatalf("Done() = false, want true")
+			}
+			if selection.Started() {
+				t.Fatal("Started() = true, want false")
+			}
+			if !selection.Cancelled() {
+				t.Fatal("Cancelled() = false, want true")
 			}
 			if cmd == nil {
 				t.Fatalf("Update(%q) returned nil command, want quit command", key)
