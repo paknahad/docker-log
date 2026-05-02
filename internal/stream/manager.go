@@ -27,6 +27,8 @@ type Manager struct {
 	buffer int
 }
 
+const maxLogLineBytes = 1024 * 1024
+
 func NewManager(buffer int) Manager {
 	if buffer < 0 {
 		buffer = 0
@@ -114,6 +116,7 @@ func (m Manager) stream(ctx context.Context, source Source, events chan<- Event)
 	defer close(done)
 
 	scanner := bufio.NewScanner(reader)
+	scanner.Buffer(make([]byte, 0, 64*1024), maxLogLineBytes)
 	for scanner.Scan() {
 		message := scanner.Text()
 		event := Event{

@@ -2,7 +2,7 @@
 
 ## What it does
 
-Owns live log stream lifecycle management. The stream manager starts one reader per selected container source, scans log lines incrementally, prefixes each emitted line with the container name, and fans data or source errors into one shared event channel.
+Owns live log stream lifecycle management. The stream manager starts one reader per selected container source, scans log lines incrementally with a bounded 1 MiB per-line maximum, prefixes each emitted line with the container name, and fans data or source errors into one shared event channel.
 
 ## Public API
 
@@ -30,4 +30,4 @@ None.
 
 ## Notes
 
-Stream failures are emitted as events for the affected container and do not stop unrelated streams. Filtering remains downstream and must not restart or mutate these streams.
+Stream failures are emitted as events for the affected container and do not stop unrelated streams. Individual log lines up to 1 MiB are supported so large structured payloads do not trip the scanner default; lines beyond that bound are treated as stream errors. Filtering remains downstream and must not restart or mutate these streams.
