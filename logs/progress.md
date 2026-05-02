@@ -1,6 +1,11 @@
-## In progress
+## 2026-05-02 — Multiplexed stream manager added
 
-**Issue #4 — Multiplexed live log streaming:** Building the focused stream lifecycle and fan-in layer in `internal/stream` on branch `agent/4-multiplexed-live-log-streaming`.
+**What it does:** docker-log now has the internal machinery to read multiple selected container log streams at the same time and combine them into one feed.
+**How:** Adds a stream manager that runs one reader per container source, prefixes each log line with the container name, and reports stream-specific errors without stopping other streams.
+**Why:** This creates the live streaming foundation needed before the terminal UI can show logs from several containers together.
+**Status:** PR open.
+**PR:** #12
+STATUS: Multiplexed live log streaming → foundation shipped
 
 ## 2026-05-02 — Docker container discovery added
 
