@@ -20,10 +20,10 @@ run_agent_cycle() {
     model="$(codex_model)"
     echo "[codex] cycle starting with model: $model"
 
-    # Codex CLI's non-interactive flag is `exec`, with --full-auto for unattended.
+    # Codex CLI's non-interactive flag is `exec`, with --sandbox workspace-write for unattended.
     codex exec \
         --model "$model" \
-        --full-auto \
+        --sandbox workspace-write \
         "$AGENT_PROMPT"
 }
 
