@@ -1,6 +1,11 @@
-## In progress
+## 2026-05-02 — Docker container discovery added
 
-- Issue #2: Implement Docker container discovery on branch `agent/2-docker-container-discovery`.
+**What it does:** docker-log now finds running local Docker containers and shows their name, image, and status in the selection screen.
+**How:** Adds a Docker SDK adapter that normalizes container data before passing it to the terminal UI.
+**Why:** Real container discovery is the foundation for selecting containers and streaming their logs.
+**Status:** Merged.
+**PR:** #11
+STATUS: Docker container discovery → ✅ shipped
 
 ## 2026-05-02 — Go project bootstrap opened for review
 
