@@ -2,9 +2,10 @@ package domain
 
 // Container describes a running Docker container available for log streaming.
 type Container struct {
-	ID    string
-	Name  string
-	Image string
+	ID     string
+	Name   string
+	Image  string
+	Status string
 }
 
 func (c Container) DisplayName() string {

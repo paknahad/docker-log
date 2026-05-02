@@ -53,6 +53,17 @@ func TestSelectionModelEmptyStateRendersClearly(t *testing.T) {
 	}
 }
 
+func TestSelectionModelRendersContainerStatus(t *testing.T) {
+	model := NewSelectionModel([]domain.Container{
+		{ID: "api-id", Name: "api", Image: "example/api:latest", Status: "Up 2 minutes"},
+	})
+
+	view := model.View()
+	if !strings.Contains(view, "Up 2 minutes") {
+		t.Fatalf("View() = %q, want container status", view)
+	}
+}
+
 func TestSelectionModelQuitKeysExitCleanly(t *testing.T) {
 	for _, key := range []string{"q", "ctrl+c", "enter"} {
 		t.Run(key, func(t *testing.T) {
