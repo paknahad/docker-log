@@ -3,11 +3,13 @@ package docker
 import (
 	"context"
 	"errors"
+	"io"
 	"strings"
 	"testing"
 
 	dockertypes "github.com/docker/docker/api/types"
 	dockercontainer "github.com/docker/docker/api/types/container"
+	"github.com/paknahad/docker-log/internal/domain"
 )
 
 func TestClientListRunningContainers(t *testing.T) {
@@ -73,10 +75,59 @@ func TestClientListRunningContainersWrapsErrors(t *testing.T) {
 	}
 }
 
+func TestClientOpenContainerLogs(t *testing.T) {
+	reader := io.NopCloser(strings.NewReader("ready\n"))
+	api := &fakeContainerAPI{logReader: reader}
+	client := NewClientWithAPI(api)
+
+	got, err := client.OpenContainerLogs(context.Background(), domain.Container{ID: "abc123", Name: "api"})
+	if err != nil {
+		t.Fatalf("OpenContainerLogs() error = %v", err)
+	}
+	if got != reader {
+		t.Fatalf("OpenContainerLogs() reader = %p, want %p", got, reader)
+	}
+	if api.logContainerID != "abc123" {
+		t.Fatalf("ContainerLogs() container = %q, want abc123", api.logContainerID)
+	}
+	if !api.logOptions.Follow {
+		t.Fatal("ContainerLogs() Follow = false, want true")
+	}
+	if !api.logOptions.ShowStdout {
+		t.Fatal("ContainerLogs() ShowStdout = false, want true")
+	}
+	if !api.logOptions.ShowStderr {
+		t.Fatal("ContainerLogs() ShowStderr = false, want true")
+	}
+	if api.logOptions.Tail != "0" {
+		t.Fatalf("ContainerLogs() Tail = %q, want 0 for live-only streams", api.logOptions.Tail)
+	}
+}
+
+func TestClientOpenContainerLogsWrapsErrors(t *testing.T) {
+	api := &fakeContainerAPI{logErr: errors.New("permission denied")}
+	client := NewClientWithAPI(api)
+
+	_, err := client.OpenContainerLogs(context.Background(), domain.Container{ID: "abc123", Name: "api"})
+	if err == nil {
+		t.Fatal("OpenContainerLogs() error = nil, want error")
+	}
+	if !strings.Contains(err.Error(), "open Docker logs for api") {
+		t.Fatalf("error = %q, want log stream context", err)
+	}
+	if !errors.Is(err, api.logErr) {
+		t.Fatalf("error does not wrap original error %v", api.logErr)
+	}
+}
+
 type fakeContainerAPI struct {
-	containers []dockertypes.Container
-	err        error
-	options    dockercontainer.ListOptions
+	containers     []dockertypes.Container
+	err            error
+	options        dockercontainer.ListOptions
+	logContainerID string
+	logOptions     dockercontainer.LogsOptions
+	logReader      io.ReadCloser
+	logErr         error
 }
 
 func (f *fakeContainerAPI) ContainerList(ctx context.Context, options dockercontainer.ListOptions) ([]dockertypes.Container, error) {
@@ -85,4 +136,13 @@ func (f *fakeContainerAPI) ContainerList(ctx context.Context, options dockercont
 		return nil, f.err
 	}
 	return f.containers, nil
+}
+
+func (f *fakeContainerAPI) ContainerLogs(ctx context.Context, containerID string, options dockercontainer.LogsOptions) (io.ReadCloser, error) {
+	f.logContainerID = containerID
+	f.logOptions = options
+	if f.logErr != nil {
+		return nil, f.logErr
+	}
+	return f.logReader, nil
 }
