@@ -17,10 +17,11 @@ type Source struct {
 }
 
 type Event struct {
-	Container string
-	Message   string
-	Line      string
-	Err       error
+	Container    string
+	Message      string
+	Line         string
+	Err          error
+	Disconnected bool
 }
 
 type Manager struct {
@@ -134,9 +135,14 @@ func (m Manager) stream(ctx context.Context, source Source, events chan<- Event)
 			return
 		}
 	}
-	if err := scanner.Err(); err != nil && ctx.Err() == nil {
-		send(ctx, events, Event{Container: source.Container, Err: err})
+	if ctx.Err() != nil {
+		return
 	}
+	if err := scanner.Err(); err != nil {
+		send(ctx, events, Event{Container: source.Container, Err: err})
+		return
+	}
+	send(ctx, events, Event{Container: source.Container, Disconnected: true})
 }
 
 func send(ctx context.Context, events chan<- Event, event Event) bool {

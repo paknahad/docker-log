@@ -72,11 +72,12 @@ func TestRunStreamsSelectedContainersIntoLogView(t *testing.T) {
 	if len(client.opened) != 1 || client.opened[0] != "worker-id" {
 		t.Fatalf("opened streams = %#v, want worker-id", client.opened)
 	}
-	if len(gotEvents) != 1 {
-		t.Fatalf("len(events) = %d, want 1: %#v", len(gotEvents), gotEvents)
+	logEvents := logLineEvents(gotEvents)
+	if len(logEvents) != 1 {
+		t.Fatalf("len(log events) = %d, want 1: %#v", len(logEvents), gotEvents)
 	}
-	if gotEvents[0].Container != "worker" || gotEvents[0].Line != "worker: ready" {
-		t.Fatalf("event = %#v, want worker prefixed ready line", gotEvents[0])
+	if logEvents[0].Container != "worker" || logEvents[0].Line != "worker: ready" {
+		t.Fatalf("event = %#v, want worker prefixed ready line", logEvents[0])
 	}
 }
 
@@ -126,4 +127,14 @@ func updateSelectionKey(t *testing.T, model ui.SelectionModel, key tea.KeyMsg) u
 		t.Fatalf("Update() returned %T, want ui.SelectionModel", next)
 	}
 	return selection
+}
+
+func logLineEvents(events []stream.Event) []stream.Event {
+	var lines []stream.Event
+	for _, event := range events {
+		if event.Line != "" {
+			lines = append(lines, event)
+		}
+	}
+	return lines
 }

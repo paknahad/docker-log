@@ -58,6 +58,16 @@ func TestLogModelRendersStreamErrorsAsBufferedLines(t *testing.T) {
 	}
 }
 
+func TestLogModelRendersStreamDisconnectsAsBufferedLines(t *testing.T) {
+	model := NewLogModel(nil)
+	model = updateLogWithEvent(t, model, stream.Event{Container: "api", Disconnected: true})
+
+	view := model.View()
+	if !strings.Contains(view, "api: stream disconnected") {
+		t.Fatalf("View() = %q, want stream disconnect line", view)
+	}
+}
+
 func updateLogWithEvent(t *testing.T, model LogModel, event stream.Event) LogModel {
 	t.Helper()
 
