@@ -1,6 +1,11 @@
-## In progress
+## 2026-05-03 — Stream buffering is bounded
 
-- 2026-05-03 — Working on #6, adding bounded stream buffering and backpressure handling on branch `agent/6-bounded-buffering`.
+**What it does:** docker-log now has an explicit cap on the stream event queue so heavy log output cannot request an unlimited in-memory buffer.
+**How:** The stream manager caps requested event buffers at 4,096 events and blocks producers when the UI falls behind.
+**Why:** This keeps memory growth bounded under high log volume while preserving log lines instead of silently dropping them.
+**Status:** Merged.
+**PR:** #31
+STATUS: Live log streaming resilience -> ✅ shipped
 
 ## 2026-05-03 — Selection quit exits cleanly
 
