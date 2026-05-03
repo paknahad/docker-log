@@ -52,6 +52,9 @@ func (m LogModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyCtrlR:
 			m.filterState.Regex = !m.filterState.Regex
 			return m, nil
+		case tea.KeyCtrlT:
+			m.filterState.CaseSensitive = !m.filterState.CaseSensitive
+			return m, nil
 		case tea.KeyBackspace:
 			if m.filterState.Text != "" {
 				runes := []rune(m.filterState.Text)
@@ -143,10 +146,17 @@ func (m LogModel) visibleLines() []string {
 }
 
 func (m LogModel) filterModeLabel() string {
+	labels := make([]string, 0, 2)
 	if m.filterState.Regex {
-		return " (regex)"
+		labels = append(labels, "regex")
 	}
-	return ""
+	if !m.filterState.CaseSensitive {
+		labels = append(labels, "case-insensitive")
+	}
+	if len(labels) == 0 {
+		return ""
+	}
+	return " (" + strings.Join(labels, ", ") + ")"
 }
 
 func (m *LogModel) renderStreamEvent(event stream.Event) renderedLogLine {

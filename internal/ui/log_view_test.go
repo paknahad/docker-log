@@ -32,6 +32,44 @@ func TestLogModelFiltersBufferedLinesLive(t *testing.T) {
 	}
 }
 
+func TestLogModelPlainTextFilterDefaultsToCaseSensitive(t *testing.T) {
+	model := NewLogModel(nil)
+	model = updateLogWithEvent(t, model, stream.Event{Container: "api", Message: "Error opening stream", Line: "api: Error opening stream"})
+	model = updateLogWithEvent(t, model, stream.Event{Container: "worker", Message: "error opening stream", Line: "worker: error opening stream"})
+	model, _ = updateLogWithKey(t, model, "Error")
+
+	view := model.View()
+	if !strings.Contains(view, "api: Error opening stream") {
+		t.Fatalf("View() = %q, want exact-case match visible", view)
+	}
+	if strings.Contains(view, "worker: error opening stream") {
+		t.Fatalf("View() = %q, want different-case match hidden by default", view)
+	}
+	if !strings.Contains(view, "Filter: Error") {
+		t.Fatalf("View() = %q, want default case-sensitive prompt", view)
+	}
+}
+
+func TestLogModelCtrlTTogglesCaseInsensitivePlainTextFiltering(t *testing.T) {
+	model := NewLogModel(nil)
+	model = updateLogWithEvent(t, model, stream.Event{Container: "api", Message: "Error opening stream", Line: "api: Error opening stream"})
+	model = updateLogWithEvent(t, model, stream.Event{Container: "worker", Message: "error opening stream", Line: "worker: error opening stream"})
+	model, _ = updateLogWithKey(t, model, "Error")
+	model, cmd := updateLogWithCtrlT(t, model)
+
+	if cmd != nil {
+		t.Fatal("ctrl+t returned a command, want nil so streams are not restarted")
+	}
+
+	view := model.View()
+	if !strings.Contains(view, "api: Error opening stream") || !strings.Contains(view, "worker: error opening stream") {
+		t.Fatalf("View() = %q, want both case variants visible", view)
+	}
+	if !strings.Contains(view, "Filter (case-insensitive): Error") {
+		t.Fatalf("View() = %q, want case-insensitive prompt", view)
+	}
+}
+
 func TestLogModelTreatsQAsFilterText(t *testing.T) {
 	model := NewLogModel(nil)
 
@@ -291,6 +329,17 @@ func updateLogWithCtrlR(t *testing.T, model LogModel) (LogModel, tea.Cmd) {
 	t.Helper()
 
 	next, cmd := model.Update(tea.KeyMsg{Type: tea.KeyCtrlR})
+	logModel, ok := next.(LogModel)
+	if !ok {
+		t.Fatalf("Update() returned %T, want LogModel", next)
+	}
+	return logModel, cmd
+}
+
+func updateLogWithCtrlT(t *testing.T, model LogModel) (LogModel, tea.Cmd) {
+	t.Helper()
+
+	next, cmd := model.Update(tea.KeyMsg{Type: tea.KeyCtrlT})
 	logModel, ok := next.(LogModel)
 	if !ok {
 		t.Fatalf("Update() returned %T, want LogModel", next)
