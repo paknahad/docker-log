@@ -25,7 +25,7 @@ None.
 
 ## Pipeline steps
 
-The UI receives normalized `domain.Container` values from the Docker adapter layer. It tracks selection state locally and returns the selected containers to later stream-management code. During log viewing, the UI receives normalized `stream.Event` values from the stream module, stores rendered lines in memory, and asks `internal/filter` which buffered lines are visible for the current query.
+The UI receives normalized `domain.Container` values from the Docker adapter layer. It tracks selection state locally and returns the selected containers to later stream-management code. During log viewing, the UI receives normalized `stream.Event` values from the stream module, stores rendered log lines, errors, and disconnect notices in memory, and asks `internal/filter` which buffered lines are visible for the current query.
 
 ## Routes
 
@@ -37,4 +37,4 @@ None.
 
 ## Notes
 
-Keep Docker SDK access out of this module. UI models should consume domain or stream values and emit user intent so the terminal event loop stays responsive. Filter edits must only affect display state; they should not create new stream commands or reopen Docker readers.
+Keep Docker SDK access out of this module. UI models should consume domain or stream values and emit user intent so the terminal event loop stays responsive. Filter edits must only affect display state; they should not create new stream commands or reopen Docker readers. Stream disconnects should remain visible as buffered status lines so stopped or restarted containers do not fail silently.

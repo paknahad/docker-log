@@ -1,3 +1,12 @@
+## 2026-05-03 — Container lifecycle disconnects are visible
+
+**What it does:** docker-log now shows when an individual container log stream disconnects instead of silently ending that container's output.
+**How:** The stream manager emits a lifecycle event on clean stream closure and the log view renders that status alongside log lines.
+**Why:** Stopped or restarted containers should be visible to the user without crashing the application or hiding the failure mode.
+**Status:** Merged.
+**PR:** #32
+STATUS: Live log streaming resilience -> ✅ shipped
+
 ## 2026-05-03 — Stream buffering is bounded
 
 **What it does:** docker-log now has an explicit cap on the stream event queue so heavy log output cannot request an unlimited in-memory buffer.

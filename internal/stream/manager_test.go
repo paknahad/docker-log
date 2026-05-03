@@ -30,12 +30,13 @@ func TestManagerFansInLinesWithContainerPrefixes(t *testing.T) {
 	events := NewManager(0).Start(context.Background(), sources)
 	got := collectEvents(events)
 
+	lineEvents := logLineEvents(got)
 	want := map[string]bool{
 		"api|api one|api: api one":             false,
 		"api|api two|api: api two":             false,
 		"worker|worker one|worker: worker one": false,
 	}
-	for _, event := range got {
+	for _, event := range lineEvents {
 		if event.Err != nil {
 			t.Fatalf("event.Err = %v, want nil", event.Err)
 		}
@@ -90,6 +91,43 @@ func TestManagerReportsSourceFailureWithoutStoppingOtherStreams(t *testing.T) {
 	}
 }
 
+func TestManagerReportsCleanStreamDisconnectWithoutStoppingOtherStreams(t *testing.T) {
+	sources := []Source{
+		{
+			Container: "done",
+			Open: func(context.Context) (io.ReadCloser, error) {
+				return io.NopCloser(strings.NewReader("last line\n")), nil
+			},
+		},
+		{
+			Container: "other",
+			Open: func(context.Context) (io.ReadCloser, error) {
+				return io.NopCloser(strings.NewReader("still visible\n")), nil
+			},
+		},
+	}
+
+	events := NewManager(0).Start(context.Background(), sources)
+	got := collectEvents(events)
+
+	var sawDisconnect bool
+	var sawOtherLine bool
+	for _, event := range got {
+		if event.Container == "done" && event.Disconnected {
+			sawDisconnect = true
+		}
+		if event.Container == "other" && event.Line == "other: still visible" {
+			sawOtherLine = true
+		}
+	}
+	if !sawDisconnect {
+		t.Fatalf("did not receive clean stream disconnect in %#v", got)
+	}
+	if !sawOtherLine {
+		t.Fatalf("unrelated stream did not continue in %#v", got)
+	}
+}
+
 func TestManagerStreamsLinesLongerThanScannerDefaultLimit(t *testing.T) {
 	longLine := strings.Repeat("x", 70*1024)
 	source := Source{
@@ -101,16 +139,17 @@ func TestManagerStreamsLinesLongerThanScannerDefaultLimit(t *testing.T) {
 
 	events := collectEvents(NewManager(0).Start(context.Background(), []Source{source}))
 
-	if len(events) != 1 {
-		t.Fatalf("len(events) = %d, want 1: %#v", len(events), events)
+	lineEvents := logLineEvents(events)
+	if len(lineEvents) != 1 {
+		t.Fatalf("len(lineEvents) = %d, want 1: %#v", len(lineEvents), events)
 	}
-	if events[0].Err != nil {
-		t.Fatalf("event.Err = %v, want nil", events[0].Err)
+	if lineEvents[0].Err != nil {
+		t.Fatalf("event.Err = %v, want nil", lineEvents[0].Err)
 	}
-	if events[0].Message != longLine {
-		t.Fatalf("len(event.Message) = %d, want %d", len(events[0].Message), len(longLine))
+	if lineEvents[0].Message != longLine {
+		t.Fatalf("len(event.Message) = %d, want %d", len(lineEvents[0].Message), len(longLine))
 	}
-	if events[0].Line != "api: "+longLine {
+	if lineEvents[0].Line != "api: "+longLine {
 		t.Fatalf("event.Line has prefix/message mismatch")
 	}
 }
@@ -235,9 +274,9 @@ func TestSourcesForContainersCreatesOneSourcePerSelectedContainer(t *testing.T) 
 		t.Fatalf("sources[1] = %#v, want worker source", sources[1])
 	}
 
-	events := collectEvents(NewManager(0).Start(context.Background(), sources))
+	events := logLineEvents(collectEvents(NewManager(0).Start(context.Background(), sources)))
 	if len(events) != 2 {
-		t.Fatalf("len(events) = %d, want 2", len(events))
+		t.Fatalf("len(log line events) = %d, want 2", len(events))
 	}
 }
 
@@ -270,6 +309,16 @@ func collectEvents(events <-chan Event) []Event {
 		got = append(got, event)
 	}
 	return got
+}
+
+func logLineEvents(events []Event) []Event {
+	var lines []Event
+	for _, event := range events {
+		if event.Line != "" {
+			lines = append(lines, event)
+		}
+	}
+	return lines
 }
 
 type closeNotifyingReadCloser struct {

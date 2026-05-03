@@ -112,5 +112,11 @@ func renderStreamEvent(event stream.Event) string {
 		}
 		return fmt.Sprintf("%s: %v", event.Container, event.Err)
 	}
+	if event.Disconnected {
+		if event.Container == "" {
+			return "stream disconnected"
+		}
+		return fmt.Sprintf("%s: stream disconnected", event.Container)
+	}
 	return event.Line
 }
