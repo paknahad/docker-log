@@ -1,3 +1,12 @@
+## 2026-05-03 — Filter case sensitivity can be toggled
+
+**What it does:** docker-log now lets users switch the live log filter between exact-case matching and case-insensitive matching.
+**How:** The log view keeps the existing case-sensitive default and uses Ctrl+T to toggle the filter state without restarting streams.
+**Why:** Developers can quickly find messages when log casing varies across services while preserving precise matching by default.
+**Status:** Merged.
+**PR:** #46
+STATUS: Advanced filtering → ✅ shipped
+
 ## 2026-05-03 — Regex filtering is available in the log view
 
 **What it does:** docker-log can now filter live log messages with Go regular expressions and shows invalid regex feedback instead of failing silently.
