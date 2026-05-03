@@ -1,6 +1,11 @@
-## In progress
+## 2026-05-03 — Filter option switches are visible
 
-**Issue #44 — Add filter option switches to the TUI:** Adding visible regex and case-sensitivity controls to the log view while keeping the filter input usable.
+**What it does:** docker-log now shows whether regex filtering and case-sensitive matching are on or off directly in the live log filter area.
+**How:** The log view renders compact switch states beside the Ctrl+R and Ctrl+T shortcuts while keeping typed filter text active.
+**Why:** Users can see and change advanced filter modes without guessing which mode is currently applied.
+**Status:** Merged.
+**PR:** #47
+STATUS: Advanced filtering → ✅ shipped
 
 ## 2026-05-03 — Filter case sensitivity can be toggled
 
