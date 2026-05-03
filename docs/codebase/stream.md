@@ -2,13 +2,13 @@
 
 ## What it does
 
-Owns live log stream lifecycle management. The stream manager starts one reader per selected container source, scans log lines incrementally with a bounded 1 MiB per-line maximum, prefixes each emitted line with the container name, and fans data or source errors into one shared event channel.
+Owns live log stream lifecycle management. The stream manager starts one reader per selected container source, scans log lines incrementally with a bounded 1 MiB per-line maximum, prefixes each emitted line with the container name, and fans data or source errors into one shared event channel with an explicit maximum buffer.
 
 ## Public API
 
 - `Source`: describes one selected container stream and its reader opener.
 - `Event`: normalized stream output with container name, raw message, prefixed line, or an error.
-- `NewManager(buffer int)`: creates a stream manager with the requested event channel buffer.
+- `NewManager(buffer int)`: creates a stream manager with the requested event channel buffer, capped at 4,096 events.
 - `Manager.Start(ctx, sources)`: starts all sources concurrently and returns the fan-in event channel.
 - `SourcesForContainers(containers, open)`: converts selected domain containers into one stream source each.
 
@@ -18,7 +18,7 @@ None.
 
 ## Pipeline steps
 
-The UI or runtime layer supplies selected containers and an opener function from the Docker adapter. The manager opens every source concurrently, scans lines as they arrive, emits prefixed events into a shared channel, and closes the channel after all streams stop. Context cancellation closes live readers so streaming can end on user exit.
+The UI or runtime layer supplies selected containers and an opener function from the Docker adapter. The manager opens every source concurrently, scans lines as they arrive, emits prefixed events into a shared channel, and closes the channel after all streams stop. If the event channel fills, producer goroutines block so backpressure reaches the source readers instead of dropping log lines or growing memory without bound. Context cancellation closes live readers so streaming can end on user exit.
 
 ## Routes
 

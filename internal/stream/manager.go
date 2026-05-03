@@ -27,11 +27,17 @@ type Manager struct {
 	buffer int
 }
 
-const maxLogLineBytes = 1024 * 1024
+const (
+	maxLogLineBytes = 1024 * 1024
+	maxEventBuffer  = 4096
+)
 
 func NewManager(buffer int) Manager {
 	if buffer < 0 {
 		buffer = 0
+	}
+	if buffer > maxEventBuffer {
+		buffer = maxEventBuffer
 	}
 	return Manager{buffer: buffer}
 }
@@ -134,6 +140,9 @@ func (m Manager) stream(ctx context.Context, source Source, events chan<- Event)
 }
 
 func send(ctx context.Context, events chan<- Event, event Event) bool {
+	// A full channel blocks producer goroutines on purpose. This applies
+	// backpressure to Docker readers instead of dropping lines or allowing an
+	// unbounded in-memory queue to grow when the UI cannot keep up.
 	select {
 	case events <- event:
 		return true
