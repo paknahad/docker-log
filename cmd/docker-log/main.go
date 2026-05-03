@@ -83,7 +83,14 @@ func runSelectionUI(containers []domain.Container) ([]domain.Container, error) {
 	if !ok {
 		return nil, fmt.Errorf("selection UI returned %T", model)
 	}
-	return selection.SelectedContainers(), nil
+	return selectionResultContainers(selection), nil
+}
+
+func selectionResultContainers(selection ui.SelectionModel) []domain.Container {
+	if !selection.Started() {
+		return nil
+	}
+	return selection.SelectedContainers()
 }
 
 func runLogUI(events <-chan stream.Event) error {

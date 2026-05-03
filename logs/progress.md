@@ -1,3 +1,12 @@
+## 2026-05-03 — Selection quit exits cleanly
+
+**What it does:** docker-log now exits from the container selection screen when the user presses `q` or Ctrl-C, even if containers were already selected.
+**How:** The CLI only starts streams when the selection UI reports that Enter started the session.
+**Why:** Cancel keys should never surprise users by opening live log streams.
+**Status:** Merged.
+**PR:** #30
+STATUS: Selection cancel handling -> ✅ shipped
+
 ## 2026-05-02 — Docker log frame artifacts removed
 
 **What it does:** docker-log now shows clean stdout and stderr text for common non-TTY containers instead of leaking Docker framing bytes into the log view.
