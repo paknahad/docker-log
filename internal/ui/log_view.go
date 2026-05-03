@@ -95,6 +95,7 @@ func (m LogModel) View() string {
 	}
 
 	fmt.Fprintf(&b, "\nFilter%s: %s", m.filterModeLabel(), m.filterState.Text)
+	fmt.Fprintf(&b, "\nOptions: Regex [%s] Ctrl+R | Case-sensitive [%s] Ctrl+T", onOff(m.filterState.Regex), onOff(m.filterState.CaseSensitive))
 	if err := m.FilterError(); err != nil {
 		fmt.Fprintf(&b, "\nInvalid regex: %v", err)
 	}
@@ -215,6 +216,13 @@ func (m *LogModel) colorForContainer(container string) string {
 
 func plainLogLine(line string) renderedLogLine {
 	return renderedLogLine{filterText: line, display: line}
+}
+
+func onOff(enabled bool) string {
+	if enabled {
+		return "on"
+	}
+	return "off"
 }
 
 func terminalSupportsANSIPrefixColors() bool {

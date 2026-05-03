@@ -1,3 +1,12 @@
+## 2026-05-03 — Filter option switches are visible
+
+**What it does:** docker-log now shows whether regex filtering and case-sensitive matching are on or off directly in the live log filter area.
+**How:** The log view renders compact switch states beside the Ctrl+R and Ctrl+T shortcuts while keeping typed filter text active.
+**Why:** Users can see and change advanced filter modes without guessing which mode is currently applied.
+**Status:** Merged.
+**PR:** #47
+STATUS: Advanced filtering → ✅ shipped
+
 ## 2026-05-03 — Filter case sensitivity can be toggled
 
 **What it does:** docker-log now lets users switch the live log filter between exact-case matching and case-insensitive matching.
