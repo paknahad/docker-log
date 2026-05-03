@@ -146,6 +146,75 @@ func TestManagerClosesLiveStreamsOnContextCancel(t *testing.T) {
 	_ = writer.Close()
 }
 
+func TestManagerCapsRequestedEventBuffer(t *testing.T) {
+	events := NewManager(maxEventBuffer+1).Start(context.Background(), nil)
+
+	if got := cap(events); got != maxEventBuffer {
+		t.Fatalf("cap(events) = %d, want %d", got, maxEventBuffer)
+	}
+}
+
+func TestManagerAppliesBackpressureWhenEventBufferIsFull(t *testing.T) {
+	reader, writer := io.Pipe()
+	source := Source{
+		Container: "api",
+		Open: func(context.Context) (io.ReadCloser, error) {
+			return reader, nil
+		},
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	events := NewManager(1).Start(ctx, []Source{source})
+
+	if _, err := writer.Write([]byte("one\n")); err != nil {
+		t.Fatalf("write first line: %v", err)
+	}
+
+	secondWritten := make(chan error, 1)
+	go func() {
+		_, err := writer.Write([]byte("two\n"))
+		secondWritten <- err
+	}()
+
+	select {
+	case err := <-secondWritten:
+		if err != nil {
+			t.Fatalf("write second line: %v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("second write did not reach the stream reader")
+	}
+
+	thirdWritten := make(chan error, 1)
+	go func() {
+		_, err := writer.Write([]byte("three\n"))
+		thirdWritten <- err
+	}()
+
+	select {
+	case err := <-thirdWritten:
+		t.Fatalf("third write completed before consumer drained the full event buffer: %v", err)
+	case <-time.After(50 * time.Millisecond):
+	}
+
+	if event := <-events; event.Line != "api: one" {
+		t.Fatalf("first event = %#v, want api: one", event)
+	}
+
+	select {
+	case err := <-thirdWritten:
+		if err != nil {
+			t.Fatalf("write third line after draining buffer: %v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("third write stayed blocked after consumer drained the event buffer")
+	}
+
+	_ = writer.Close()
+}
+
 func TestSourcesForContainersCreatesOneSourcePerSelectedContainer(t *testing.T) {
 	containers := []domain.Container{
 		{ID: "abc123", Name: "api"},
@@ -169,6 +238,29 @@ func TestSourcesForContainersCreatesOneSourcePerSelectedContainer(t *testing.T) 
 	events := collectEvents(NewManager(0).Start(context.Background(), sources))
 	if len(events) != 2 {
 		t.Fatalf("len(events) = %d, want 2", len(events))
+	}
+}
+
+func BenchmarkManagerFanInWithBoundedBuffer(b *testing.B) {
+	var input strings.Builder
+	for i := 0; i < b.N; i++ {
+		input.WriteString("line\n")
+	}
+	source := Source{
+		Container: "api",
+		Open: func(context.Context) (io.ReadCloser, error) {
+			return io.NopCloser(strings.NewReader(input.String())), nil
+		},
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	count := 0
+	for range NewManager(maxEventBuffer).Start(context.Background(), []Source{source}) {
+		count++
+	}
+	if count != b.N {
+		b.Fatalf("count = %d, want %d", count, b.N)
 	}
 }
 

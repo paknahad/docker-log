@@ -1,3 +1,7 @@
+## In progress
+
+- 2026-05-03 — Working on #6, adding bounded stream buffering and backpressure handling on branch `agent/6-bounded-buffering`.
+
 ## 2026-05-03 — Selection quit exits cleanly
 
 **What it does:** docker-log now exits from the container selection screen when the user presses `q` or Ctrl-C, even if containers were already selected.
