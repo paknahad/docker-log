@@ -69,6 +69,15 @@ STATUS: Selection cancel handling -> ✅ shipped
 **PR:** #27
 STATUS: Live log streaming resilience -> ✅ shipped
 
+## 2026-05-03 — Filter modes can be represented safely
+
+**What it does:** docker-log now has the internal filter settings needed for plain text, regex, and case-sensitive matching modes.
+**How:** The filter engine stores matching mode in one state value and validates regex patterns before using them.
+**Why:** This prepares advanced filtering without spreading matching rules through the UI or risking crashes on bad patterns.
+**Status:** Merged.
+**PR:** #41
+STATUS: Advanced filtering → foundation shipped
+
 ## 2026-05-02 — Selection start and cancel are distinct
 
 **What it does:** docker-log can now tell whether the selection screen exited because the user started streaming or cancelled.
