@@ -4,7 +4,7 @@
 **How:** The log view toggles regex mode while still filtering only message content, so container names do not create false matches.
 **Why:** Developers can narrow noisy multiplexed logs with more precise patterns while keeping the existing plain-text filter behavior.
 **Status:** Merged.
-**PR:** #TBD
+**PR:** #45
 STATUS: Advanced filtering → ✅ shipped
 
 ## 2026-05-03 — Filters now ignore container names
