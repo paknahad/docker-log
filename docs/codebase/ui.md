@@ -2,7 +2,7 @@
 
 ## What it does
 
-Provides Bubble Tea models for terminal interaction. The selection model lets users navigate running containers, see their image and status, and select one or more containers before log streaming starts. The log model renders buffered stream output and applies a bottom-input text filter without mutating live streams.
+Provides Bubble Tea models for terminal interaction. The selection model lets users navigate running containers, see their image and status, and select one or more containers before log streaming starts. The log model renders buffered stream output, colorizes container name prefixes when the terminal supports ANSI colors, and applies a bottom-input text filter without mutating live streams.
 
 ## Public API
 
@@ -25,7 +25,7 @@ None.
 
 ## Pipeline steps
 
-The UI receives normalized `domain.Container` values from the Docker adapter layer. It tracks selection state locally and returns the selected containers to later stream-management code. During log viewing, the UI receives normalized `stream.Event` values from the stream module, stores rendered log lines, errors, and disconnect notices in memory, and asks `internal/filter` which buffered lines are visible for the current query.
+The UI receives normalized `domain.Container` values from the Docker adapter layer. It tracks selection state locally and returns the selected containers to later stream-management code. During log viewing, the UI receives normalized `stream.Event` values from the stream module, stores plain and display forms of log lines, errors, and disconnect notices in memory, and asks `internal/filter` which plain buffered lines are visible for the current query. Container prefix colors are assigned from a small readable ANSI palette the first time a container appears and remain stable for that log-view session; terminals that opt out of color or report `TERM=dumb` receive plain prefixes.
 
 ## Routes
 
