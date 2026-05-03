@@ -14,7 +14,7 @@ import (
 type LogModel struct {
 	events           <-chan stream.Event
 	lines            []renderedLogLine
-	query            string
+	filterState      filter.State
 	done             bool
 	colorizePrefixes bool
 	containerColors  map[string]string
@@ -32,6 +32,7 @@ type renderedLogLine struct {
 func NewLogModel(events <-chan stream.Event) LogModel {
 	return LogModel{
 		events:           events,
+		filterState:      filter.NewState(""),
 		colorizePrefixes: terminalSupportsANSIPrefixColors(),
 		containerColors:  make(map[string]string),
 	}
@@ -49,18 +50,18 @@ func (m LogModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.done = true
 			return m, tea.Quit
 		case tea.KeyBackspace:
-			if m.query != "" {
-				runes := []rune(m.query)
-				m.query = string(runes[:len(runes)-1])
+			if m.filterState.Text != "" {
+				runes := []rune(m.filterState.Text)
+				m.filterState.Text = string(runes[:len(runes)-1])
 			}
 			return m, nil
 		case tea.KeyEsc:
-			m.query = ""
+			m.filterState.Text = ""
 			return m, nil
 		}
 
 		if len(msg.Runes) > 0 {
-			m.query += string(msg.Runes)
+			m.filterState.Text += string(msg.Runes)
 		}
 		return m, nil
 	case streamEventMsg:
@@ -87,7 +88,7 @@ func (m LogModel) View() string {
 		}
 	}
 
-	fmt.Fprintf(&b, "\nFilter: %s", m.query)
+	fmt.Fprintf(&b, "\nFilter: %s", m.filterState.Text)
 	return b.String()
 }
 
@@ -96,7 +97,7 @@ func (m LogModel) Done() bool {
 }
 
 func (m LogModel) Filter() string {
-	return m.query
+	return m.filterState.Text
 }
 
 func waitForStreamEvent(events <-chan stream.Event) tea.Cmd {
@@ -113,7 +114,10 @@ func waitForStreamEvent(events <-chan stream.Event) tea.Cmd {
 }
 
 func (m LogModel) visibleLines() []string {
-	matcher := filter.NewMatcher(m.query)
+	matcher, err := filter.NewMatcherForState(m.filterState)
+	if err != nil {
+		return nil
+	}
 	visible := make([]string, 0, len(m.lines))
 	for _, line := range m.lines {
 		if matcher.Matches(line.filterText) {
