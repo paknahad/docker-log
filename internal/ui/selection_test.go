@@ -86,33 +86,49 @@ func TestSelectionModelEnterStartsSelection(t *testing.T) {
 	}
 }
 
-func TestSelectionModelQuitKeysCancelSelection(t *testing.T) {
-	for _, key := range []string{"q", "ctrl+c"} {
-		t.Run(key, func(t *testing.T) {
-			model := NewSelectionModel([]domain.Container{{ID: "api-id", Name: "api"}})
+func TestSelectionModelCtrlCCancelsSelection(t *testing.T) {
+	model := NewSelectionModel([]domain.Container{{ID: "api-id", Name: "api"}})
 
-			next, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(key)})
-			if key == "ctrl+c" {
-				next, cmd = model.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
-			}
+	next, cmd := model.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
 
-			selection, ok := next.(SelectionModel)
-			if !ok {
-				t.Fatalf("Update() returned %T, want SelectionModel", next)
-			}
-			if !selection.Done() {
-				t.Fatalf("Done() = false, want true")
-			}
-			if selection.Started() {
-				t.Fatal("Started() = true, want false")
-			}
-			if !selection.Cancelled() {
-				t.Fatal("Cancelled() = false, want true")
-			}
-			if cmd == nil {
-				t.Fatalf("Update(%q) returned nil command, want quit command", key)
-			}
-		})
+	selection, ok := next.(SelectionModel)
+	if !ok {
+		t.Fatalf("Update() returned %T, want SelectionModel", next)
+	}
+	if !selection.Done() {
+		t.Fatal("Done() = false, want true")
+	}
+	if selection.Started() {
+		t.Fatal("Started() = true, want false")
+	}
+	if !selection.Cancelled() {
+		t.Fatal("Cancelled() = false, want true")
+	}
+	if cmd == nil {
+		t.Fatal("Update(ctrl+c) returned nil command, want quit command")
+	}
+}
+
+func TestSelectionModelQDoesNotQuit(t *testing.T) {
+	model := NewSelectionModel([]domain.Container{{ID: "api-id", Name: "api"}})
+
+	next, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("q")})
+
+	selection, ok := next.(SelectionModel)
+	if !ok {
+		t.Fatalf("Update() returned %T, want SelectionModel", next)
+	}
+	if selection.Done() {
+		t.Fatal("Done() = true, want false")
+	}
+	if selection.Started() {
+		t.Fatal("Started() = true, want false")
+	}
+	if selection.Cancelled() {
+		t.Fatal("Cancelled() = true, want false")
+	}
+	if cmd != nil {
+		t.Fatal("Update(q) returned command, want nil")
 	}
 }
 

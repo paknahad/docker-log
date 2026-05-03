@@ -59,16 +59,10 @@ func (m LogModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		switch msg.String() {
-		case "q":
-			m.done = true
-			return m, tea.Quit
-		default:
-			if len(msg.Runes) > 0 {
-				m.query += string(msg.Runes)
-			}
-			return m, nil
+		if len(msg.Runes) > 0 {
+			m.query += string(msg.Runes)
 		}
+		return m, nil
 	case streamEventMsg:
 		event := stream.Event(msg)
 		m.lines = append(m.lines, m.renderStreamEvent(event))

@@ -32,6 +32,39 @@ func TestLogModelFiltersBufferedLinesLive(t *testing.T) {
 	}
 }
 
+func TestLogModelTreatsQAsFilterText(t *testing.T) {
+	model := NewLogModel(nil)
+
+	model, cmd := updateLogWithKey(t, model, "q")
+
+	if cmd != nil {
+		t.Fatal("typing q returned a command, want nil")
+	}
+	if model.Done() {
+		t.Fatal("Done() = true, want false")
+	}
+	if model.Filter() != "q" {
+		t.Fatalf("Filter() = %q, want q", model.Filter())
+	}
+}
+
+func TestLogModelCtrlCQuits(t *testing.T) {
+	model := NewLogModel(nil)
+
+	next, cmd := model.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
+
+	logModel, ok := next.(LogModel)
+	if !ok {
+		t.Fatalf("Update() returned %T, want LogModel", next)
+	}
+	if !logModel.Done() {
+		t.Fatal("Done() = false, want true")
+	}
+	if cmd == nil {
+		t.Fatal("Update(ctrl+c) returned nil command, want quit command")
+	}
+}
+
 func TestLogModelClearingFilterRestoresBufferedLines(t *testing.T) {
 	model := NewLogModel(nil)
 	model = updateLogWithEvent(t, model, stream.Event{Line: "api: started"})
