@@ -3,9 +3,9 @@
 **What it does:** docker-log now gives each container name prefix a stable color in the live log view so multiplexed output is easier to scan.
 **How:** The UI assigns prefix colors during a log-view session while keeping message text and filter matching plain.
 **Why:** Users can distinguish containers faster without changing the underlying log content.
-**Status:** PR open.
+**Status:** Merged.
 **PR:** #34
-STATUS: Multiplexed log readability -> PR open
+STATUS: Multiplexed log readability -> ✅ shipped
 
 ## 2026-05-03 — Container lifecycle disconnects are visible
 
