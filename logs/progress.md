@@ -1,3 +1,7 @@
+## In progress
+
+- #37 — Applying live-log filters to message content only. Branch: `agent/37-filter-message-content`.
+
 ## 2026-05-03 — README reflects the shipped log workflow
 
 **What it does:** The README now tells users that docker-log can list running containers, select one or more, stream live logs, and filter visible output.
