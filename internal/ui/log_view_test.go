@@ -150,7 +150,7 @@ func TestLogModelFiltersColorizedLinesUsingPlainText(t *testing.T) {
 	model.colorizePrefixes = true
 	model = updateLogWithEvent(t, model, stream.Event{Container: "api", Message: "started", Line: "api: started"})
 	model = updateLogWithEvent(t, model, stream.Event{Container: "worker", Message: "ready", Line: "worker: ready"})
-	model, _ = updateLogWithKey(t, model, "worker")
+	model, _ = updateLogWithKey(t, model, "ready")
 
 	view := model.View()
 	if strings.Contains(view, "api") {
@@ -158,6 +158,36 @@ func TestLogModelFiltersColorizedLinesUsingPlainText(t *testing.T) {
 	}
 	if !strings.Contains(view, "\x1b[33mworker\x1b[0m: ready") {
 		t.Fatalf("View() = %q, want matching colorized line visible", view)
+	}
+}
+
+func TestLogModelFilterIgnoresContainerNamePrefix(t *testing.T) {
+	model := NewLogModel(nil)
+	model = updateLogWithEvent(t, model, stream.Event{Container: "api", Message: "started", Line: "api: started"})
+	model, _ = updateLogWithKey(t, model, "api")
+
+	view := model.View()
+	if strings.Contains(view, "api: started") {
+		t.Fatalf("View() = %q, want container-name-only match hidden", view)
+	}
+	if !strings.Contains(view, "No log lines match the current filter.") {
+		t.Fatalf("View() = %q, want empty filtered state", view)
+	}
+}
+
+func TestLogModelFiltersMultiplexedStreamsByMessageOnly(t *testing.T) {
+	model := NewLogModel(nil)
+	model = updateLogWithEvent(t, model, stream.Event{Container: "api", Message: "ready", Line: "api: ready"})
+	model = updateLogWithEvent(t, model, stream.Event{Container: "worker", Message: "api request handled", Line: "worker: api request handled"})
+	model = updateLogWithEvent(t, model, stream.Event{Container: "api", Message: "idle", Line: "api: idle"})
+	model, _ = updateLogWithKey(t, model, "api")
+
+	view := model.View()
+	if strings.Contains(view, "api: ready") || strings.Contains(view, "api: idle") {
+		t.Fatalf("View() = %q, want api container lines without message matches hidden", view)
+	}
+	if !strings.Contains(view, "worker: api request handled") {
+		t.Fatalf("View() = %q, want message match from worker stream visible", view)
 	}
 }
 

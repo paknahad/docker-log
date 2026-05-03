@@ -1,3 +1,12 @@
+## 2026-05-03 — Filters now ignore container names
+
+**What it does:** docker-log now filters live logs by the actual message text instead of matching container name prefixes.
+**How:** The log view keeps rendered output separate from the text used for filter matching, so container names stay visible without affecting results.
+**Why:** Users can filter multiplexed logs by content without accidentally showing every line from a similarly named container.
+**Status:** Merged.
+**PR:** #39
+STATUS: Interactive log filtering -> ✅ shipped
+
 ## 2026-05-03 — README reflects the shipped log workflow
 
 **What it does:** The README now tells users that docker-log can list running containers, select one or more, stream live logs, and filter visible output.

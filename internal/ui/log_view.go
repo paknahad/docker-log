@@ -25,8 +25,8 @@ type streamEventMsg stream.Event
 type streamClosedMsg struct{}
 
 type renderedLogLine struct {
-	plain   string
-	display string
+	filterText string
+	display    string
 }
 
 func NewLogModel(events <-chan stream.Event) LogModel {
@@ -116,7 +116,7 @@ func (m LogModel) visibleLines() []string {
 	matcher := filter.NewMatcher(m.query)
 	visible := make([]string, 0, len(m.lines))
 	for _, line := range m.lines {
-		if matcher.Matches(line.plain) {
+		if matcher.Matches(line.filterText) {
 			visible = append(visible, line.display)
 		}
 	}
@@ -143,19 +143,23 @@ func (m *LogModel) renderStreamEvent(event stream.Event) renderedLogLine {
 	if message == "" {
 		message = strings.TrimPrefix(event.Line, event.Container+": ")
 	}
-	return m.renderPrefixedLine(event.Container, message)
+	return m.renderPrefixedLine(event.Container, message, message)
 }
 
-func (m *LogModel) renderPrefixedLine(container, message string) renderedLogLine {
-	plain := fmt.Sprintf("%s: %s", container, message)
+func (m *LogModel) renderPrefixedLine(container, message string, filterText ...string) renderedLogLine {
+	textForFilter := message
+	if len(filterText) > 0 {
+		textForFilter = filterText[0]
+	}
+	display := fmt.Sprintf("%s: %s", container, message)
 	if !m.colorizePrefixes {
-		return plainLogLine(plain)
+		return renderedLogLine{filterText: textForFilter, display: display}
 	}
 
 	color := m.colorForContainer(container)
 	return renderedLogLine{
-		plain:   plain,
-		display: fmt.Sprintf("\x1b[%sm%s\x1b[0m: %s", color, container, message),
+		filterText: textForFilter,
+		display:    fmt.Sprintf("\x1b[%sm%s\x1b[0m: %s", color, container, message),
 	}
 }
 
@@ -174,7 +178,7 @@ func (m *LogModel) colorForContainer(container string) string {
 }
 
 func plainLogLine(line string) renderedLogLine {
-	return renderedLogLine{plain: line, display: line}
+	return renderedLogLine{filterText: line, display: line}
 }
 
 func terminalSupportsANSIPrefixColors() bool {
