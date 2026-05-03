@@ -2,7 +2,7 @@
 
 docker-log is a terminal UI for viewing and filtering live logs from multiple running Docker containers.
 
-It is built for local Docker development, where debugging usually means juggling several `docker logs` commands or terminal panes. docker-log will let you select running containers, stream their logs together, preserve each container name on every line, and narrow the visible output with an interactive filter.
+It is built for local Docker development, where debugging usually means juggling several `docker logs` commands or terminal panes. docker-log lists running containers, lets you select one or more of them, streams their logs together, preserves each container name on every line, and narrows the visible output with an interactive filter.
 
 The project is intentionally local-first. It is not a hosted logging platform, metrics system, cloud integration, or Kubernetes tool. Docker access goes through the Docker Go SDK, and filtering is display-only so the underlying live streams keep running.
 
@@ -21,10 +21,10 @@ git clone https://github.com/paknahad/docker-log.git
 cd docker-log
 make build
 make ci
-go run ./cmd/docker-log --help
+go run ./cmd/docker-log
 ```
 
-The current bootstrap includes a compiling CLI skeleton. The queued implementation issues add Docker discovery, multi-container selection, multiplexed log streaming, and interactive filtering.
+Run `go run ./cmd/docker-log --help` for command help. The main workflow expects access to a local Docker daemon with at least one running container.
 
 ## Agent Workflow
 
