@@ -49,6 +49,9 @@ func (m LogModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyCtrlC:
 			m.done = true
 			return m, tea.Quit
+		case tea.KeyCtrlR:
+			m.filterState.Regex = !m.filterState.Regex
+			return m, nil
 		case tea.KeyBackspace:
 			if m.filterState.Text != "" {
 				runes := []rune(m.filterState.Text)
@@ -88,7 +91,10 @@ func (m LogModel) View() string {
 		}
 	}
 
-	fmt.Fprintf(&b, "\nFilter: %s", m.filterState.Text)
+	fmt.Fprintf(&b, "\nFilter%s: %s", m.filterModeLabel(), m.filterState.Text)
+	if err := m.FilterError(); err != nil {
+		fmt.Fprintf(&b, "\nInvalid regex: %v", err)
+	}
 	return b.String()
 }
 
@@ -98,6 +104,15 @@ func (m LogModel) Done() bool {
 
 func (m LogModel) Filter() string {
 	return m.filterState.Text
+}
+
+func (m LogModel) Regex() bool {
+	return m.filterState.Regex
+}
+
+func (m LogModel) FilterError() error {
+	_, err := filter.NewMatcherForState(m.filterState)
+	return err
 }
 
 func waitForStreamEvent(events <-chan stream.Event) tea.Cmd {
@@ -125,6 +140,13 @@ func (m LogModel) visibleLines() []string {
 		}
 	}
 	return visible
+}
+
+func (m LogModel) filterModeLabel() string {
+	if m.filterState.Regex {
+		return " (regex)"
+	}
+	return ""
 }
 
 func (m *LogModel) renderStreamEvent(event stream.Event) renderedLogLine {
