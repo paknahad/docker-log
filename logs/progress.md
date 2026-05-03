@@ -1,3 +1,11 @@
+## 2026-05-03 — README reflects the shipped log workflow
+
+**What it does:** The README now tells users that docker-log can list running containers, select one or more, stream live logs, and filter visible output.
+**How:** Updated the main project description and quick start without changing the app or broadening its local Docker scope.
+**Why:** The project entry point should match the workflow users can test today.
+**Status:** PR open.
+**PR:** #36
+
 ## 2026-05-03 — Ctrl+C is the only exit shortcut
 
 **What it does:** docker-log no longer exits when the user presses `q`, so `q` can be typed into the live log filter like normal text.
