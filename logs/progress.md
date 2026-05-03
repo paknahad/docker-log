@@ -1,3 +1,12 @@
+## 2026-05-03 — Regex filtering is available in the log view
+
+**What it does:** docker-log can now filter live log messages with Go regular expressions and shows invalid regex feedback instead of failing silently.
+**How:** The log view toggles regex mode while still filtering only message content, so container names do not create false matches.
+**Why:** Developers can narrow noisy multiplexed logs with more precise patterns while keeping the existing plain-text filter behavior.
+**Status:** Merged.
+**PR:** #45
+STATUS: Advanced filtering → ✅ shipped
+
 ## 2026-05-03 — Filters now ignore container names
 
 **What it does:** docker-log now filters live logs by the actual message text instead of matching container name prefixes.

@@ -191,6 +191,80 @@ func TestLogModelFiltersMultiplexedStreamsByMessageOnly(t *testing.T) {
 	}
 }
 
+func TestLogModelRegexModeMatchesMessageContent(t *testing.T) {
+	model := NewLogModel(nil)
+	model = updateLogWithEvent(t, model, stream.Event{Container: "api", Message: "status=200", Line: "api: status=200"})
+	model = updateLogWithEvent(t, model, stream.Event{Container: "worker", Message: "status=500", Line: "worker: status=500"})
+	model, _ = updateLogWithCtrlR(t, model)
+	model, _ = updateLogWithKey(t, model, `status=5\d\d`)
+
+	if !model.Regex() {
+		t.Fatal("Regex() = false, want true")
+	}
+	if err := model.FilterError(); err != nil {
+		t.Fatalf("FilterError() = %v, want nil", err)
+	}
+
+	view := model.View()
+	if strings.Contains(view, "api: status=200") {
+		t.Fatalf("View() = %q, want regex non-match hidden", view)
+	}
+	if !strings.Contains(view, "worker: status=500") {
+		t.Fatalf("View() = %q, want regex match visible", view)
+	}
+}
+
+func TestLogModelRegexModeDoesNotMatchContainerNames(t *testing.T) {
+	model := NewLogModel(nil)
+	model = updateLogWithEvent(t, model, stream.Event{Container: "api-1", Message: "started", Line: "api-1: started"})
+	model, _ = updateLogWithCtrlR(t, model)
+	model, _ = updateLogWithKey(t, model, `api-\d`)
+
+	view := model.View()
+	if strings.Contains(view, "api-1: started") {
+		t.Fatalf("View() = %q, want container-name-only regex match hidden", view)
+	}
+	if !strings.Contains(view, "No log lines match the current filter.") {
+		t.Fatalf("View() = %q, want empty filtered state", view)
+	}
+}
+
+func TestLogModelInvalidRegexIsExposedWithoutCrashing(t *testing.T) {
+	model := NewLogModel(nil)
+	model = updateLogWithEvent(t, model, stream.Event{Container: "api", Message: "started", Line: "api: started"})
+	model, _ = updateLogWithCtrlR(t, model)
+	model, _ = updateLogWithKey(t, model, `[`)
+
+	if err := model.FilterError(); err == nil {
+		t.Fatal("FilterError() = nil, want invalid regex error")
+	}
+
+	view := model.View()
+	if !strings.Contains(view, "Invalid regex:") {
+		t.Fatalf("View() = %q, want invalid regex feedback", view)
+	}
+	if strings.Contains(view, "api: started") {
+		t.Fatalf("View() = %q, want invalid regex to hide filtered lines", view)
+	}
+}
+
+func TestLogModelRegexFiltersMultiplexedStreamsByMessageOnly(t *testing.T) {
+	model := NewLogModel(nil)
+	model = updateLogWithEvent(t, model, stream.Event{Container: "api", Message: "ready", Line: "api: ready"})
+	model = updateLogWithEvent(t, model, stream.Event{Container: "worker", Message: "api request 42 handled", Line: "worker: api request 42 handled"})
+	model = updateLogWithEvent(t, model, stream.Event{Container: "api", Message: "idle", Line: "api: idle"})
+	model, _ = updateLogWithCtrlR(t, model)
+	model, _ = updateLogWithKey(t, model, `api request \d+`)
+
+	view := model.View()
+	if strings.Contains(view, "api: ready") || strings.Contains(view, "api: idle") {
+		t.Fatalf("View() = %q, want api container lines without message regex matches hidden", view)
+	}
+	if !strings.Contains(view, "worker: api request 42 handled") {
+		t.Fatalf("View() = %q, want message regex match from worker stream visible", view)
+	}
+}
+
 func updateLogWithEvent(t *testing.T, model LogModel, event stream.Event) LogModel {
 	t.Helper()
 
@@ -206,6 +280,17 @@ func updateLogWithKey(t *testing.T, model LogModel, text string) (LogModel, tea.
 	t.Helper()
 
 	next, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(text)})
+	logModel, ok := next.(LogModel)
+	if !ok {
+		t.Fatalf("Update() returned %T, want LogModel", next)
+	}
+	return logModel, cmd
+}
+
+func updateLogWithCtrlR(t *testing.T, model LogModel) (LogModel, tea.Cmd) {
+	t.Helper()
+
+	next, cmd := model.Update(tea.KeyMsg{Type: tea.KeyCtrlR})
 	logModel, ok := next.(LogModel)
 	if !ok {
 		t.Fatalf("Update() returned %T, want LogModel", next)
