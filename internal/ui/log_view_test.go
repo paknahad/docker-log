@@ -70,6 +70,27 @@ func TestLogModelCtrlTTogglesCaseInsensitivePlainTextFiltering(t *testing.T) {
 	}
 }
 
+func TestLogModelShowsFilterOptionSwitches(t *testing.T) {
+	model := NewLogModel(nil)
+	model, _ = updateLogWithKey(t, model, "Error")
+
+	view := model.View()
+	if !strings.Contains(view, "Options: Regex [off] Ctrl+R | Case-sensitive [on] Ctrl+T") {
+		t.Fatalf("View() = %q, want visible default filter option switches", view)
+	}
+
+	model, _ = updateLogWithCtrlR(t, model)
+	model, _ = updateLogWithCtrlT(t, model)
+
+	view = model.View()
+	if !strings.Contains(view, "Options: Regex [on] Ctrl+R | Case-sensitive [off] Ctrl+T") {
+		t.Fatalf("View() = %q, want visible toggled filter option switches", view)
+	}
+	if model.Filter() != "Error" {
+		t.Fatalf("Filter() = %q, want toggle shortcuts to leave filter input intact", model.Filter())
+	}
+}
+
 func TestLogModelTreatsQAsFilterText(t *testing.T) {
 	model := NewLogModel(nil)
 

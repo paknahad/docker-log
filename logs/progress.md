@@ -1,3 +1,7 @@
+## In progress
+
+**Issue #44 — Add filter option switches to the TUI:** Adding visible regex and case-sensitivity controls to the log view while keeping the filter input usable.
+
 ## 2026-05-03 — Filter case sensitivity can be toggled
 
 **What it does:** docker-log now lets users switch the live log filter between exact-case matching and case-insensitive matching.
