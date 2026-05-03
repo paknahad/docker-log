@@ -3,9 +3,9 @@
 **What it does:** docker-log no longer exits when the user presses `q`, so `q` can be typed into the live log filter like normal text.
 **How:** The selection and log views now reserve application exit for Ctrl+C and the help text reflects that shortcut.
 **Why:** Filter input should accept ordinary letters without accidentally closing the app.
-**Status:** PR open.
+**Status:** Merged.
 **PR:** #35
-STATUS: Interactive log filtering -> PR open
+STATUS: Interactive log filtering -> ✅ shipped
 
 ## 2026-05-03 — Container prefixes are colorized
 
