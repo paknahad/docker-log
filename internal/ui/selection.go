@@ -45,7 +45,7 @@ func (m SelectionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case "enter":
 		m.result = selectionStarted
 		return m, tea.Quit
-	case "ctrl+c", "q":
+	case "ctrl+c":
 		m.result = selectionCancelled
 		return m, tea.Quit
 	case "up", "k":
@@ -78,7 +78,7 @@ func (m SelectionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m SelectionModel) View() string {
 	if len(m.containers) == 0 {
-		return "No running containers found.\n\nPress q to quit.\n"
+		return "No running containers found.\n\nPress Ctrl+C to quit.\n"
 	}
 
 	var b strings.Builder
@@ -105,7 +105,7 @@ func (m SelectionModel) View() string {
 		b.WriteByte('\n')
 	}
 
-	b.WriteString("\nSpace selects, enter starts, q quits.\n")
+	b.WriteString("\nSpace selects, enter starts, Ctrl+C quits.\n")
 	return b.String()
 }
 

@@ -84,7 +84,7 @@ func TestRunStreamsSelectedContainersIntoLogView(t *testing.T) {
 func TestSelectionResultContainersReturnsNoneWhenSelectionCancelled(t *testing.T) {
 	model := ui.NewSelectionModel([]domain.Container{{ID: "api-id", Name: "api"}})
 	model = updateSelectionKey(t, model, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(" ")})
-	model = updateSelectionKey(t, model, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("q")})
+	model = updateSelectionKey(t, model, tea.KeyMsg{Type: tea.KeyCtrlC})
 
 	selected := selectionResultContainers(model)
 	if len(selected) != 0 {

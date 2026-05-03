@@ -1,3 +1,12 @@
+## 2026-05-03 — Ctrl+C is the only exit shortcut
+
+**What it does:** docker-log no longer exits when the user presses `q`, so `q` can be typed into the live log filter like normal text.
+**How:** The selection and log views now reserve application exit for Ctrl+C and the help text reflects that shortcut.
+**Why:** Filter input should accept ordinary letters without accidentally closing the app.
+**Status:** Merged.
+**PR:** #35
+STATUS: Interactive log filtering -> ✅ shipped
+
 ## 2026-05-03 — Container prefixes are colorized
 
 **What it does:** docker-log now gives each container name prefix a stable color in the live log view so multiplexed output is easier to scan.
