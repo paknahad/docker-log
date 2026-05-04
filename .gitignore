@@ -40,3 +40,4 @@ plans/*.md
 # Daily logs are kept; only .gitkeep guards directory
 logs/daily/*.md
 !logs/daily/.gitkeep
+.template-base/
